@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plan Carrera · Tu talento tiene muchos caminos</title>
+<meta name="description" content="Conoce los cargos que existen, mira qué necesitas para llegar a ellos y postúlate.">
+<meta name="theme-color" content="#1F1F1F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- =====================================================================
+     CONFIGURACIÓN — lo único que hay que tocar en este archivo.
+     ===================================================================== -->
+<script>
+const CONFIG = {
+  // 1) Pega la misma configuración de Firebase del artefacto administrativo (☁ Nube).
+  firebase: {
+    // apiKey: "...",
+    // authDomain: "cartografia-talento.firebaseapp.com",
+    // projectId: "cartografia-talento",
+    // storageBucket: "...",
+    // messagingSenderId: "...",
+    // appId: "..."
+  },
+  // 2) El mismo código de organización que usas en el artefacto.
+  orgCode: "{
+  "apiKey": "AIzaSyCJAoAWJhIQoYBi8jXIYfqrGWi30IJKA9s",
+  "authDomain": "cartografia-talento.firebaseapp.com",
+  "projectId": "cartografia-talento",
+  "storageBucket": "cartografia-talento.firebasestorage.app",
+  "messagingSenderId": "42862317480",
+  "appId": "1:42862317480:web:7926aafd9bf37c6224979d",
+  "measurementId": "G-DZ5LYFJG9H"
+}",
+  // 3) Marca.
+  nombreOrg: "AVSA",
+  titulo: "Plan Carrera",
+  bajada: "Tu desarrollo, nuestro futuro",
+  lema: "Juntos llegamos más lejos"
+};
+
+// 4) Imágenes. Deja vacío lo que no tengas: se dibuja un fondo con el ícono del área.
+//    Puedes usar rutas relativas ("img/granjas.jpg") o direcciones completas.
+const IMAGENES = {
+  logo: "",          // logo de la organización para la barra superior
+  hero: "",          // foto grande de la portada
+  areas: {
+    // La clave debe ser el nombre del área tal como aparece en el artefacto:
+    // "Granjas": "img/granjas.jpg",
+    // "Plantas": "img/plantas.jpg",
+  }
+};
+
+// 5) Preguntas frecuentes. Ajusta las respuestas a la política real de la organización.
+const PREGUNTAS = [
+  { p: "¿Quién se puede postular?",
+    r: "Cualquier persona vinculada a la organización que quiera moverse a otro cargo. No importa el área en la que estés hoy: los caminos se pueden cruzar." },
+  { p: "¿Puedo postularme si no cumplo todos los requisitos?",
+    r: "Sí. La autoevaluación no es un filtro que te deje por fuera, es una foto de dónde estás. Postularte nos deja saber que ese camino te interesa, y así podemos acompañarte en lo que te falta." },
+  { p: "¿Qué pasa después de que envío mi postulación?",
+    r: "Gestión Humana revisa tu caso y te contacta al celular que registraste. Guarda el código que aparece al final para preguntar por tu proceso." },
+  { p: "¿Cuánto se demora?",
+    r: "Depende de si hay una vacante abierta en ese momento. Aunque no la haya, tu postulación queda registrada para cuando se abra." },
+  { p: "¿Mi jefe se entera de que me postulé?",
+    r: "El proceso lo lleva Gestión Humana. En algún momento se habla con tu líder, porque tu experiencia en el cargo actual es parte de la evaluación." },
+  { p: "¿Me puedo postular a varios cargos?",
+    r: "Sí. Puedes recorrer las áreas y postularte a los cargos que te interesen." }
+];
+</script>
+
+<style>
+  *,*::before,*::after{box-sizing:border-box;}
+  :root{
+    --negro:#1F1F1F;
+    --negro-suave:#2A2A2A;
+    --dorado:#C8A24A;
+    --dorado-hondo:#A8843C;
+    --crema:#F7F1E3;
+    --blanco:#FFFFFF;
+    --gris-claro:#F5F5F5;
+    --gris-medio:#D9D9D9;
+    --gris-oscuro:#666666;
+    --verde:#3F7A57;
+    --terracota:#A64A3E;
+    --ancho:1280px;
+    --lectura:720px;
+    --r:14px;
+  }
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--blanco);color:var(--negro);
+    font-family:'Plus Jakarta Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+    font-size:16.5px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  img{max-width:100%;display:block;}
+  .contenido{max-width:var(--ancho);margin:0 auto;padding:0 22px;}
+
+  /* ================= BARRA SUPERIOR ================= */
+  .cabecera{background:var(--negro);color:var(--blanco);position:sticky;top:0;z-index:60;}
+  .cabecera-fila{max-width:var(--ancho);margin:0 auto;padding:0 22px;
+    display:flex;align-items:center;gap:18px;min-height:70px;}
+  .marca{display:flex;align-items:center;gap:12px;cursor:pointer;background:none;border:0;
+    padding:0;color:inherit;font-family:inherit;text-align:left;}
+  .marca-logo{height:38px;width:auto;}
+  .marca-nom{font-size:23px;font-weight:800;letter-spacing:.06em;}
+  .marca-div{width:1px;height:38px;background:rgba(255,255,255,.28);}
+  .marca-tit{display:block;font-size:16px;font-weight:700;line-height:1.2;}
+  .marca-sub{display:block;font-size:12.5px;color:#B9B3A6;line-height:1.2;}
+
+  .menu{margin-left:auto;display:flex;gap:6px;align-items:center;}
+  .menu button{background:none;border:0;color:#E6E2D9;font-family:inherit;font-size:15px;
+    font-weight:500;padding:9px 14px;cursor:pointer;border-bottom:3px solid transparent;
+    border-radius:4px 4px 0 0;}
+  .menu button:hover{color:var(--blanco);}
+  .menu button.activo{color:var(--blanco);font-weight:700;border-bottom-color:var(--dorado);}
+  .menu-btn{display:none;margin-left:auto;background:none;border:1px solid rgba(255,255,255,.35);
+    color:var(--blanco);border-radius:9px;padding:9px 12px;cursor:pointer;font-family:inherit;
+    font-size:14px;font-weight:600;}
+
+  /* ================= PORTADA ================= */
+  .portada{background:var(--negro);color:var(--blanco);overflow:hidden;}
+  .portada-rejilla{max-width:var(--ancho);margin:0 auto;display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch;}
+  .portada-txt{padding:52px 22px 44px;display:flex;flex-direction:column;justify-content:center;}
+  .portada h1{font-size:clamp(34px,4.4vw,56px);line-height:1.03;font-weight:800;
+    letter-spacing:-.025em;margin:0 0 18px;}
+  .portada h1 span{display:block;color:var(--dorado);}
+  .portada-lead{margin:0;font-size:18px;line-height:1.5;color:#DCD7CC;max-width:34ch;}
+  .portada-regla{width:74px;height:4px;background:var(--dorado);border-radius:2px;margin:26px 0 30px;}
+  .ventajas{display:flex;flex-wrap:wrap;}
+  .ventaja{display:flex;align-items:center;gap:12px;padding-right:22px;margin-right:22px;
+    border-right:1px solid rgba(255,255,255,.2);}
+  .ventaja:last-child{border-right:0;margin-right:0;padding-right:0;}
+  .ventaja-ico{width:46px;height:46px;border-radius:50%;border:2px solid var(--dorado);
+    display:flex;align-items:center;justify-content:center;flex:none;}
+  .ventaja span{font-size:14.5px;line-height:1.3;max-width:15ch;}
+
+  .portada-media{position:relative;min-height:340px;background:var(--negro-suave);
+    background-size:cover;background-position:center;
+    display:flex;align-items:center;justify-content:center;}
+  .portada-media::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(90deg,var(--negro) 0%,rgba(31,31,31,.55) 22%,rgba(31,31,31,0) 55%);}
+  .tarjeta-lema{position:absolute;z-index:2;top:36px;right:32px;max-width:290px;
+    background:var(--crema);color:var(--negro);border-radius:16px;padding:22px 24px;}
+  .tarjeta-lema b{display:block;font-size:18px;font-weight:800;line-height:1.3;}
+  .tarjeta-lema hr{border:0;height:3px;width:54px;background:var(--dorado);margin:14px 0;border-radius:2px;}
+  .tarjeta-lema p{margin:0;font-size:16px;line-height:1.45;}
+
+  /* ================= SECCIONES ================= */
+  .seccion{padding:46px 0 40px;}
+  .ficha{max-width:var(--lectura);}
+  .seccion-cab{display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:26px;}
+  .seccion-cab h2{font-size:clamp(24px,2.6vw,32px);font-weight:800;letter-spacing:-.02em;margin:0 0 4px;}
+  .seccion-cab p{margin:0;color:var(--gris-oscuro);font-size:16px;}
+  .titulo-pag{font-size:clamp(25px,3vw,30px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px;}
+  .lead-pag{margin:0 0 22px;color:var(--gris-oscuro);}
+  .buscador{margin-left:auto;position:relative;min-width:280px;flex:0 1 340px;}
+  .buscador input{width:100%;font-family:inherit;font-size:15.5px;padding:13px 16px 13px 44px;
+    border:1px solid var(--gris-medio);border-radius:99px;background:var(--blanco);color:var(--negro);}
+  .buscador input:focus{outline:none;border-color:var(--dorado);box-shadow:0 0 0 3px rgba(200,162,74,.2);}
+  .buscador svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);}
+
+  /* Tarjetas de área */
+  .rejilla-areas{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));}
+  .area{background:var(--blanco);border:1px solid var(--gris-medio);border-radius:var(--r);
+    overflow:hidden;cursor:pointer;text-align:left;font-family:inherit;color:inherit;padding:0;
+    display:flex;flex-direction:column;transition:border-color .18s,box-shadow .18s,transform .18s;}
+  .area:hover{border-color:var(--dorado);box-shadow:0 8px 24px rgba(31,31,31,.09);transform:translateY(-2px);}
+  .area-foto{position:relative;aspect-ratio:16/10;background:var(--crema);
+    background-size:cover;background-position:center;
+    display:flex;align-items:center;justify-content:center;}
+  .area-foto.sin-foto{background:linear-gradient(140deg,#EFE7D5,#DCCFB2);}
+  .area-ico{position:absolute;left:14px;bottom:-19px;width:38px;height:38px;border-radius:50%;
+    background:var(--dorado);display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--blanco);}
+  .area-pie{padding:26px 16px 16px;display:flex;align-items:center;gap:10px;}
+  .area-pie > div{flex:1;min-width:0;}
+  .area-nom{font-size:16.5px;font-weight:700;line-height:1.25;}
+  .area-cuenta{font-size:13.5px;color:var(--gris-oscuro);}
+
+  /* Franja de beneficios */
+  .franja{background:var(--crema);padding:30px 0;}
+  .franja-fila{max-width:var(--ancho);margin:0 auto;padding:0 22px;display:flex;
+    align-items:center;flex-wrap:wrap;}
+  .franja-item{display:flex;align-items:center;gap:13px;padding-right:30px;margin-right:30px;
+    border-right:1px solid rgba(31,31,31,.14);}
+  .franja-item b{display:block;font-size:16px;font-weight:700;line-height:1.2;}
+  .franja-item span{font-size:14px;color:var(--gris-oscuro);}
+  .franja-lema{margin-left:auto;font-family:'Caveat',cursive;font-size:34px;line-height:1;
+    text-align:center;padding-left:20px;}
+  .franja-lema u{display:block;height:3px;width:120px;background:var(--dorado);
+    margin:8px auto 0;border-radius:2px;}
+
+  /* ================= EL CAMINO ================= */
+  .volver{background:none;border:0;font-family:inherit;font-size:15px;font-weight:600;
+    color:var(--dorado-hondo);cursor:pointer;padding:0;margin-bottom:18px;}
+  .volver:hover{color:var(--negro);}
+  .ruta{list-style:none;margin:0;padding:0;position:relative;max-width:760px;}
+  .ruta::before{content:"";position:absolute;left:23px;top:16px;bottom:28px;width:3px;
+    background:linear-gradient(var(--dorado),var(--crema));border-radius:2px;
+    transform-origin:top;animation:crecer .7s ease-out both;}
+  @keyframes crecer{from{transform:scaleY(0);}to{transform:scaleY(1);}}
+  .peldano{position:relative;padding-left:66px;margin-bottom:14px;}
+  .marca-nivel{position:absolute;left:0;top:14px;width:48px;height:48px;border-radius:50%;
+    background:var(--blanco);border:3px solid var(--dorado);display:flex;align-items:center;
+    justify-content:center;font-weight:800;font-size:18px;}
+  .peldano-btn{display:block;width:100%;text-align:left;background:var(--blanco);
+    border:1px solid var(--gris-medio);border-radius:var(--r);padding:17px 20px;cursor:pointer;
+    font-family:inherit;color:inherit;transition:border-color .16s,box-shadow .16s;}
+  .peldano-btn:hover{border-color:var(--dorado);box-shadow:0 4px 16px rgba(200,162,74,.16);}
+  .peldano-nom{font-size:18.5px;font-weight:700;line-height:1.25;margin-bottom:4px;}
+  .peldano-area{font-size:14.5px;color:var(--dorado-hondo);font-weight:600;margin-bottom:4px;}
+  .peldano-txt{font-size:15px;color:var(--gris-oscuro);line-height:1.45;}
+  .peldano-ver{font-size:14.5px;font-weight:700;color:var(--dorado-hondo);margin-top:9px;}
+
+  /* ================= FICHA DEL CARGO ================= */
+  .chip{display:inline-block;background:var(--crema);border:1px solid var(--dorado);
+    color:var(--dorado-hondo);font-size:13px;font-weight:700;padding:4px 13px;border-radius:99px;}
+  .cargo-tit{font-size:clamp(28px,4vw,40px);font-weight:800;line-height:1.06;
+    letter-spacing:-.025em;margin:14px 0 16px;}
+  .consiste{background:var(--crema);border-radius:var(--r);padding:22px 24px;font-size:17.5px;
+    line-height:1.6;margin-bottom:32px;}
+  .consiste.vacio{background:var(--gris-claro);color:var(--gris-oscuro);font-size:16px;}
+  .grupo{margin-bottom:28px;}
+  .grupo h3{font-size:18px;font-weight:700;margin:0 0 4px;}
+  .grupo-nota{font-size:14px;color:var(--gris-oscuro);margin:0 0 12px;}
+  .lista{list-style:none;margin:0;padding:0;}
+  .lista li{position:relative;padding:9px 0 9px 27px;font-size:16.5px;line-height:1.45;
+    border-bottom:1px solid var(--gris-claro);}
+  .lista li::before{content:"";position:absolute;left:4px;top:17px;width:8px;height:8px;
+    border-radius:50%;background:var(--dorado);}
+  .lista li:last-child{border-bottom:none;}
+
+  /* ================= AUTOEVALUACIÓN ================= */
+  .opcion{display:flex;gap:14px;align-items:flex-start;padding:14px 17px;margin-bottom:10px;
+    border:1px solid var(--gris-medio);border-radius:12px;cursor:pointer;background:var(--blanco);
+    transition:border-color .15s,background .15s;min-height:58px;}
+  .opcion:hover{border-color:var(--dorado);}
+  .opcion input{appearance:none;-webkit-appearance:none;flex:none;width:26px;height:26px;margin:0;
+    border:2px solid var(--gris-medio);border-radius:7px;cursor:pointer;background:var(--blanco);
+    position:relative;transition:background .15s,border-color .15s;}
+  .opcion input:checked{background:var(--verde);border-color:var(--verde);}
+  .opcion input:checked::after{content:"";position:absolute;left:8px;top:3px;width:6px;height:12px;
+    border:solid var(--blanco);border-width:0 3px 3px 0;transform:rotate(42deg);}
+  .opcion:has(input:checked){background:#F2F7F3;border-color:var(--verde);}
+  .opcion span{font-size:16.5px;line-height:1.4;}
+  .grupo-eval{font-size:15.5px;font-weight:700;margin:26px 0 11px;padding-bottom:7px;
+    border-bottom:2px solid var(--gris-medio);}
+
+  /* ================= RESULTADO ================= */
+  .veredicto{border-radius:var(--r);padding:26px;margin-bottom:24px;}
+  .veredicto.alto{background:#F2F7F3;border:1px solid var(--verde);}
+  .veredicto.medio{background:var(--crema);border:1px solid var(--dorado);}
+  .veredicto.bajo{background:var(--gris-claro);border:1px solid var(--gris-medio);}
+  .veredicto h2{font-size:25px;font-weight:800;margin:0 0 8px;letter-spacing:-.01em;}
+  .veredicto p{margin:0;font-size:16.5px;line-height:1.55;}
+  .barra-ajuste{height:12px;background:var(--gris-medio);border-radius:99px;overflow:hidden;margin:18px 0 8px;}
+  .barra-ajuste i{display:block;height:100%;border-radius:99px;background:var(--dorado);transition:width .5s ease-out;}
+  .veredicto.alto .barra-ajuste i{background:var(--verde);}
+  .ajuste-txt{font-size:14.5px;color:var(--gris-oscuro);}
+  .bloque{border:1px solid var(--gris-medio);border-radius:var(--r);padding:20px 22px;margin-bottom:16px;}
+  .bloque h3{font-size:18px;font-weight:700;margin:0 0 10px;}
+  .marcada{list-style:none;margin:0;padding:0;}
+  .marcada li{position:relative;padding:7px 0 7px 29px;font-size:16px;line-height:1.45;}
+  .marcada.si li::before{content:"✓";position:absolute;left:2px;top:7px;color:var(--verde);font-weight:800;}
+  .marcada.no li::before{content:"•";position:absolute;left:5px;top:4px;color:var(--terracota);
+    font-weight:800;font-size:21px;line-height:1;}
+  .prepararse{background:var(--crema);border-radius:var(--r);padding:20px 22px;margin-bottom:16px;}
+  .prepararse h3{font-size:18px;font-weight:700;margin:0 0 6px;}
+  .prepararse p{margin:0 0 10px;font-size:15px;color:var(--gris-oscuro);}
+
+  /* ================= FORMULARIO ================= */
+  .rejilla-campos{display:grid;gap:0 20px;grid-template-columns:1fr 1fr;}
+  .campo{margin-bottom:17px;}
+  .campo.ancho{grid-column:1/-1;}
+  .campo label{display:block;font-size:15px;font-weight:600;margin-bottom:6px;}
+  .campo .ayuda{font-weight:400;color:var(--gris-oscuro);font-size:13.5px;}
+  .campo input,.campo textarea{width:100%;font-family:inherit;font-size:16.5px;color:var(--negro);
+    padding:13px 15px;border:1px solid var(--gris-medio);border-radius:11px;background:var(--blanco);}
+  .campo textarea{min-height:104px;resize:vertical;}
+  .campo input:focus,.campo textarea:focus{outline:none;border-color:var(--dorado);
+    box-shadow:0 0 0 3px rgba(200,162,74,.22);}
+  .campo.error input{border-color:var(--terracota);}
+  .campo .msg{display:none;color:var(--terracota);font-size:13.5px;margin-top:5px;}
+  .campo.error .msg{display:block;}
+  .resumen-post{background:var(--gris-claro);border-radius:var(--r);padding:18px 20px;
+    margin-bottom:26px;font-size:15.5px;}
+  .resumen-post strong{display:block;font-size:18px;margin-bottom:2px;}
+
+  /* ================= BOTONES ================= */
+  .btn{display:inline-block;font-family:inherit;font-size:17px;font-weight:700;padding:15px 30px;
+    border-radius:12px;border:2px solid transparent;cursor:pointer;text-align:center;
+    transition:background .15s,color .15s,border-color .15s;}
+  .btn-oro{background:var(--dorado);color:var(--negro);}
+  .btn-oro:hover{background:var(--dorado-hondo);color:var(--blanco);}
+  .btn-linea{background:transparent;color:var(--negro);border-color:var(--gris-medio);}
+  .btn-linea:hover{border-color:var(--negro);}
+  .btn:disabled{opacity:.55;cursor:default;}
+  .acciones{display:flex;gap:12px;flex-wrap:wrap;}
+  .barra-accion{position:sticky;bottom:0;background:linear-gradient(rgba(255,255,255,0),var(--blanco) 24%);
+    padding:26px 0 calc(22px + env(safe-area-inset-bottom));margin-top:10px;}
+  .contador{font-size:14.5px;color:var(--gris-oscuro);margin-bottom:10px;}
+
+  /* ================= PREGUNTAS / POSTULACIONES ================= */
+  .pregunta{border-bottom:1px solid var(--gris-medio);}
+  .pregunta button{width:100%;text-align:left;background:none;border:0;font-family:inherit;
+    font-size:17.5px;font-weight:700;color:var(--negro);padding:19px 40px 19px 0;cursor:pointer;
+    position:relative;line-height:1.35;}
+  .pregunta button::after{content:"+";position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    font-size:24px;font-weight:700;color:var(--dorado-hondo);}
+  .pregunta.abierta button::after{content:"–";}
+  .pregunta div{display:none;padding:0 0 20px;font-size:16.5px;line-height:1.6;color:#3A3A3A;max-width:62ch;}
+  .pregunta.abierta div{display:block;}
+  .post-item{border:1px solid var(--gris-medio);border-radius:var(--r);padding:18px 20px;margin-bottom:12px;
+    display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+  .post-item b{font-size:17px;font-weight:700;}
+  .post-item small{display:block;color:var(--gris-oscuro);font-size:14px;}
+  .post-cod{margin-left:auto;background:var(--negro);color:var(--dorado);font-weight:800;
+    letter-spacing:.07em;font-size:15px;padding:8px 15px;border-radius:9px;}
+
+  /* ================= ESTADOS ================= */
+  .aviso{padding:13px 22px;font-size:14.5px;line-height:1.5;}
+  .aviso.demo{background:var(--crema);border-bottom:1px solid var(--dorado);color:#6B551F;}
+  .aviso.malo{background:#FBEFED;border-bottom:1px solid var(--terracota);color:#7A2F26;}
+  .centro{text-align:center;padding:70px 22px;}
+  .girador{width:34px;height:34px;border:3px solid var(--gris-medio);border-top-color:var(--dorado);
+    border-radius:50%;margin:0 auto 16px;animation:giro .8s linear infinite;}
+  @keyframes giro{to{transform:rotate(360deg);}}
+  .vacio-msg{background:var(--gris-claro);border-radius:var(--r);padding:30px 24px;text-align:center;
+    color:var(--gris-oscuro);font-size:16px;}
+  .listo{text-align:center;max-width:560px;margin:0 auto;padding:22px 0 0;}
+  .listo-sello{width:84px;height:84px;border-radius:50%;background:var(--verde);color:var(--blanco);
+    display:flex;align-items:center;justify-content:center;font-size:41px;margin:0 auto 22px;}
+  .codigo{display:inline-block;background:var(--negro);color:var(--dorado);font-weight:800;
+    letter-spacing:.09em;font-size:20px;padding:12px 24px;border-radius:10px;margin:6px 0 20px;}
+  .pie{background:var(--negro);color:#B5B0A6;padding:26px 22px;text-align:center;font-size:14px;}
+
+  :focus-visible{outline:3px solid var(--dorado);outline-offset:2px;border-radius:4px;}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important;}}
+
+  /* ================= CELULAR ================= */
+  @media (max-width:900px){
+    body{font-size:16px;}
+    .menu{display:none;position:absolute;top:100%;left:0;right:0;background:var(--negro);
+      flex-direction:column;gap:0;padding:8px 12px 16px;border-top:1px solid rgba(255,255,255,.16);}
+    .menu.abierto{display:flex;}
+    .menu button{width:100%;text-align:left;padding:14px 12px;font-size:16.5px;
+      border-bottom:1px solid rgba(255,255,255,.08);border-radius:0;}
+    .menu button.activo{border-bottom-color:rgba(255,255,255,.08);color:var(--dorado);}
+    .menu-btn{display:block;}
+    .cabecera-fila{position:relative;min-height:62px;gap:11px;}
+    .marca-nom{font-size:20px;}
+    .marca-div,.marca-sub{display:none;}
+    .marca-tit{font-size:14px;}
+
+    .portada-rejilla{grid-template-columns:1fr;}
+    .portada-txt{padding:34px 22px 30px;order:1;}
+    .portada-media{order:2;min-height:210px;}
+    .portada-media::after{background:linear-gradient(180deg,rgba(31,31,31,.7),rgba(31,31,31,0) 55%);}
+    .tarjeta-lema{position:static;max-width:none;margin:0 22px 30px;border-radius:14px;}
+    .portada-regla{margin:20px 0 24px;}
+    .ventajas{flex-direction:column;gap:14px;}
+    .ventaja{border-right:0;margin-right:0;padding-right:0;}
+    .ventaja span{max-width:none;}
+
+    .seccion{padding:32px 0 30px;}
+    .seccion-cab{margin-bottom:20px;}
+    .buscador{margin-left:0;flex:1 1 100%;min-width:0;}
+    .rejilla-areas{grid-template-columns:1fr;gap:14px;}
+    .area-foto{aspect-ratio:16/7;}
+
+    .franja-fila{flex-direction:column;align-items:flex-start;gap:18px;}
+    .franja-item{border-right:0;padding-right:0;margin-right:0;}
+    .franja-lema{margin:6px 0 0;text-align:left;padding-left:0;font-size:30px;}
+    .franja-lema u{margin:6px 0 0;}
+
+    .peldano{padding-left:58px;}
+    .marca-nivel{width:42px;height:42px;font-size:16px;}
+    .ruta::before{left:20px;}
+    .rejilla-campos{grid-template-columns:1fr;}
+    .btn{display:block;width:100%;}
+    .acciones{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="cabecera-fila">
+    <button class="marca" id="marcaBtn" aria-label="Ir al inicio">
+      <span id="marcaLogo"></span>
+      <span class="marca-nom" id="marcaNom">AVSA</span>
+      <span class="marca-div"></span>
+      <span>
+        <span class="marca-tit" id="marcaTit">Plan Carrera</span>
+        <span class="marca-sub" id="marcaSub">Tu desarrollo, nuestro futuro</span>
+      </span>
+    </button>
+    <button class="menu-btn" id="menuBtn" aria-expanded="false">Menú</button>
+    <nav class="menu" id="menu" aria-label="Secciones"></nav>
+  </div>
+</header>
+
+<div id="avisos"></div>
+<main id="app" role="main"></main>
+<div class="pie">Diferentes áreas. Un mismo propósito.</div>
+
+<script>
+/* ===================================================================
+   ORIGEN DE LOS DATOS
+   El portal lee el espejo público que publica el artefacto administrativo:
+   colección "cartografia_publico", documento = código de organización.
+   Ese espejo solo trae cargos marcados como visibles y nunca contiene
+   datos personales de colaboradores.
+   =================================================================== */
+const COL_PUBLICA = 'cartografia_publico';
+const COL_POSTULACIONES = 'cartografia_postulaciones';
+const CLAVE_MIS_POST = 'plan-carrera-mis-postulaciones';
+
+const params = new URLSearchParams(location.search);
+const ORG_CODE = (params.get('org') || CONFIG.orgCode || '').trim();
+const hayFirebase = !!(CONFIG.firebase && CONFIG.firebase.projectId) && !!ORG_CODE;
+
+let db=null, datos=null, modoDemo=false;
+let vista='inicio', areaSel=null, cargoSel=null, resultado=null;
+let marcados=new Set(), busqueda='', enviando=false, errorEnvio='', codigoRef='';
+
+/* ---------- Iconos ---------- */
+const I = {
+  barras:'<path d="M4 15v5M10 9v11M16 12v8" stroke="COL" stroke-width="2.4" stroke-linecap="round"/>',
+  libro:'<path d="M4 5h6a3 3 0 0 1 3 3v11a2.5 2.5 0 0 0-2.5-2.5H4zM20 5h-6a3 3 0 0 0-3 3v11a2.5 2.5 0 0 1 2.5-2.5H20z" stroke="COL" stroke-width="1.9" stroke-linejoin="round"/>',
+  trofeo:'<path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M10 20h4M12 14v6" stroke="COL" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
+  brujula:'<circle cx="12" cy="12" r="9" stroke="COL" stroke-width="1.9"/><path d="M15.5 8.5 10.5 10.5 8.5 15.5 13.5 13.5z" fill="COL"/>',
+  estrella:'<path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z" stroke="COL" stroke-width="1.8" stroke-linejoin="round"/>',
+  personas:'<circle cx="9" cy="8" r="3" stroke="COL" stroke-width="1.9"/><circle cx="17" cy="9.5" r="2.3" stroke="COL" stroke-width="1.7"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5M16 14.5c2.5 0 4.5 1.6 4.5 4" stroke="COL" stroke-width="1.9" stroke-linecap="round"/>',
+  gallina:'<path d="M9 6.5a3.5 3.5 0 0 1 5 3.2V11l4 2.2c1.6.9 1.4 3.3-.3 3.9l-6.4 2.3a5.5 5.5 0 0 1-7.3-5.2v-1.5A5.7 5.7 0 0 1 9 6.5z" stroke="COL" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 4.5v2M11.5 4v2.2" stroke="COL" stroke-width="1.8" stroke-linecap="round"/>',
+  engranaje:'<circle cx="12" cy="12" r="3.1" stroke="COL" stroke-width="1.9"/><path d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.9 1.9M7.4 16.6l-1.9 1.9M18.5 18.5l-1.9-1.9M7.4 7.4 5.5 5.5" stroke="COL" stroke-width="1.9" stroke-linecap="round"/>',
+  caja:'<path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z" stroke="COL" stroke-width="1.8" stroke-linejoin="round"/><path d="M3.5 7.5 12 11.5l8.5-4M12 11.5v9" stroke="COL" stroke-width="1.8" stroke-linejoin="round"/>',
+  carrito:'<path d="M3 4h2.2l2.3 10.5h9.8L19.5 7H6.2" stroke="COL" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19" r="1.6" stroke="COL" stroke-width="1.7"/><circle cx="16.5" cy="19" r="1.6" stroke="COL" stroke-width="1.7"/>',
+  casco:'<path d="M3.5 16.5h17M4.5 15.5v-2a7.5 7.5 0 0 1 15 0v2M9.5 6.4V3.9h5v2.5" stroke="COL" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
+  monitor:'<rect x="3" y="4.5" width="18" height="12" rx="2" stroke="COL" stroke-width="1.9"/><path d="M9 20h6M12 16.5V20" stroke="COL" stroke-width="1.9" stroke-linecap="round"/>',
+  lupa:'<circle cx="11" cy="11" r="6.5" stroke="COL" stroke-width="1.9"/><path d="m16 16 4 4" stroke="COL" stroke-width="1.9" stroke-linecap="round"/>',
+  flecha:'<path d="m9 5 7 7-7 7" stroke="COL" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+};
+function ico(nombre,color,tam){
+  const cuerpo=(I[nombre]||I.brujula).replace(/COL/g,color||'#C8A24A');
+  return '<svg width="'+(tam||24)+'" height="'+(tam||24)+'" viewBox="0 0 24 24" fill="none" aria-hidden="true">'+cuerpo+'</svg>';
+}
+// El ícono de cada área se deduce de su nombre, para que funcione con las áreas
+// que existan en el artefacto sin tener que configurarlas una por una.
+function icoDeArea(nombre){
+  const n=(nombre||'').toLowerCase();
+  if(/granja|avic|avíc|pollo|ave/.test(n)) return 'gallina';
+  if(/planta|producc|proceso|manufact/.test(n)) return 'engranaje';
+  if(/mantenim|electro|mecan/.test(n)) return 'casco';
+  if(/log|transport|almac|distribu|cadena/.test(n)) return 'caja';
+  if(/comercial|venta|mercade|cliente|punto/.test(n)) return 'carrito';
+  if(/administ|gesti|human|financ|contab|jurid|calidad|sistema/.test(n)) return 'monitor';
+  return 'personas';
+}
+
+/* ---------- Traducción de campos internos a lenguaje de la gente ---------- */
+const GRUPOS = [
+  { key:'formacion',           titulo:'Lo que necesitas haber estudiado', modo:'unico',  peso:'clave',
+    nota:'Es el estudio mínimo con el que se entra al cargo.' },
+  { key:'experiencia',         titulo:'La experiencia que se pide',       modo:'unico',  peso:'clave',
+    nota:'Cuenta el tiempo que llevas haciendo trabajos parecidos.' },
+  { key:'compTecnicas',        titulo:'Lo que necesitas saber hacer',     modo:'lineas', peso:'clave',
+    nota:'Conocimientos y herramientas del día a día en el cargo.' },
+  { key:'requerimientos',      titulo:'Condiciones del cargo',            modo:'lineas', peso:'clave',
+    nota:'Cosas prácticas que el cargo exige.' },
+  { key:'compBlandas',         titulo:'Cómo se trabaja en este cargo',    modo:'lineas', peso:'suma',
+    nota:'Suman a tu favor, pero no cierran la puerta.' },
+  { key:'competenciasComunes', titulo:'Lo que esperamos de todos',        modo:'lineas', peso:'suma',
+    nota:'Las formas de trabajar que compartimos en toda la organización.' }
+];
+
+function lineas(txt){
+  return (txt||'').split('\n').map(s=>s.replace(/^[-•*]\s*/,'').trim()).filter(Boolean);
+}
+function requisitosDe(cargo){
+  const out=[];
+  GRUPOS.forEach(g=>{
+    const bruto=(cargo[g.key]||'').trim();
+    if(!bruto) return;
+    const items = g.modo==='unico' ? [bruto.replace(/\n+/g,' ')] : lineas(bruto);
+    items.forEach((texto,i)=>{
+      out.push({ id:g.key+':'+i, grupo:g.key, titulo:g.titulo, nota:g.nota, peso:g.peso, texto });
+    });
+  });
+  return out;
+}
+function calcular(cargo){
+  const reqs=requisitosDe(cargo);
+  const claves=reqs.filter(r=>r.peso==='clave');
+  const clavesOk=claves.filter(r=>marcados.has(r.id));
+  const sumas=reqs.filter(r=>r.peso==='suma');
+  const sumasOk=sumas.filter(r=>marcados.has(r.id));
+  const pct=claves.length?Math.round((clavesOk.length/claves.length)*100):100;
+  return { reqs, claves, clavesOk, sumas, sumasOk, pct,
+    faltan:claves.filter(r=>!marcados.has(r.id)), tiene:reqs.filter(r=>marcados.has(r.id)) };
+}
+
+/* ---------- Datos de ejemplo (modo demostración) ---------- */
+function datosDemo(){
+  return { orgName:CONFIG.nombreOrg, areas:[
+    { id:'a1', nombre:'Granjas', cargos:[
+      { id:'c1', nombre:'Galponero', nivel:1,
+        descripcion:'Cuidas las aves todos los días: las alimentas, revisas que estén sanas y mantienes el galpón en buenas condiciones. De tu trabajo depende que el ave llegue bien a la planta.',
+        formacion:'Básica primaria terminada', experiencia:'No necesitas experiencia previa',
+        compTecnicas:'Manejo y cuidado de aves\nLimpieza y desinfección del galpón\nRegistro diario de mortalidad y consumo',
+        compBlandas:'Responsabilidad con los horarios\nAtención al detalle',
+        competenciasComunes:'Trabajo en equipo\nCompromiso con la organización',
+        requerimientos:'Disponibilidad para trabajar en zona rural',
+        rutaAprendizaje:'Curso de bioseguridad en granja avícola (6 horas)\nManejo de registros de producción (3 horas)', planEstudios:'' },
+      { id:'c2', nombre:'Auxiliar de Granjas', nivel:2,
+        descripcion:'Apoyas al jefe de granja en el control de la producción y en la coordinación del equipo de galponeros.',
+        formacion:'Bachiller académico', experiencia:'1 a 2 años en granjas avícolas',
+        compTecnicas:'Manejo básico de Excel\nInterpretación de indicadores de producción\nBioseguridad avícola',
+        compBlandas:'Comunicación clara\nOrganización',
+        competenciasComunes:'Trabajo en equipo\nCompromiso con la organización', requerimientos:'',
+        rutaAprendizaje:'Excel básico aplicado a registros de granja (8 horas)\nIndicadores de producción avícola (4 horas)', planEstudios:'' }
+    ]},
+    { id:'a2', nombre:'Plantas', cargos:[
+      { id:'c3', nombre:'Operario Planta de Procesos', nivel:1,
+        descripcion:'Trabajas en la línea de proceso transformando el producto, cumpliendo las normas de higiene y calidad que exige el alimento que llega a la mesa de la gente.',
+        formacion:'Básica primaria', experiencia:'De 0 a 1 año de experiencia',
+        compTecnicas:'Manipulación higiénica de producto cárnico\nBuenas Prácticas de Manufactura (BPM)\nLimpieza y desinfección industrial',
+        compBlandas:'Autocuidado\nAtención al detalle',
+        competenciasComunes:'Trabajo en equipo\nComunicación asertiva\nCompromiso con la organización',
+        requerimientos:'Disponibilidad para trabajar por turnos',
+        rutaAprendizaje:'Inducción en BPM e inocuidad (4 horas)\nManipulación de alimentos (8 horas)', planEstudios:'' }
+    ]},
+    { id:'a3', nombre:'Comercial', cargos:[
+      { id:'c4', nombre:'Auxiliar Puntos de Venta', nivel:1,
+        descripcion:'Atiendes a los clientes en el punto de venta, mantienes el producto bien exhibido y cuidas que la experiencia de compra sea buena.',
+        formacion:'Bachiller académico', experiencia:'6 meses en atención al cliente',
+        compTecnicas:'Manejo de caja registradora\nExhibición de producto\nControl de inventario del punto',
+        compBlandas:'Amabilidad con el cliente\nAgilidad',
+        competenciasComunes:'Trabajo en equipo\nComunicación asertiva',
+        requerimientos:'Disponibilidad para trabajar fines de semana',
+        rutaAprendizaje:'Servicio al cliente en punto de venta (6 horas)\nManejo de caja y arqueo (4 horas)', planEstudios:'' }
+    ]}
+  ]};
+}
+
+/* ===================================================================
+   CARGA
+   =================================================================== */
+async function cargar(){
+  if(!hayFirebase){ modoDemo=true; datos=datosDemo(); pintar(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
+    db=firebase.firestore();
+    const doc=await db.collection(COL_PUBLICA).doc(ORG_CODE).get();
+    datos=(doc.exists && doc.data() && doc.data().payload)
+      ? JSON.parse(doc.data().payload)
+      : { orgName:CONFIG.nombreOrg, areas:[] };
+  }catch(e){
+    modoDemo=true; datos=datosDemo();
+    avisar('malo','No pudimos conectarnos para traer los cargos. Estás viendo un ejemplo. Intenta más tarde o avisa a Gestión Humana.');
+  }
+  pintar();
+}
+function avisar(tipo,texto){
+  const d=document.createElement('div'); d.className='aviso '+tipo; d.textContent=texto;
+  document.getElementById('avisos').appendChild(d);
+}
+
+/* ===================================================================
+   NAVEGACIÓN
+   =================================================================== */
+const SECCIONES=[
+  { id:'inicio',  et:'Inicio' },
+  { id:'areas',   et:'Explora las áreas' },
+  { id:'mispost', et:'Mis postulaciones' },
+  { id:'faq',     et:'Preguntas frecuentes' }
+];
+function pintarMenu(){
+  const nav=document.getElementById('menu');
+  nav.innerHTML='';
+  SECCIONES.forEach(s=>{
+    const b=document.createElement('button');
+    b.textContent=s.et;
+    const activo=(s.id==='inicio'&&vista==='inicio')||
+      (s.id==='areas'&&['ruta','cargo','evaluar','resultado','postular'].indexOf(vista)>=0)||
+      (s.id==='mispost'&&vista==='mispost')||(s.id==='faq'&&vista==='faq');
+    if(activo) b.classList.add('activo');
+    b.addEventListener('click',()=>{
+      nav.classList.remove('abierto');
+      document.getElementById('menuBtn').setAttribute('aria-expanded','false');
+      if(s.id==='areas'){
+        areaSel=null; cargoSel=null; ir('inicio');
+        setTimeout(()=>{ const el=document.getElementById('areas'); if(el) el.scrollIntoView({block:'start',behavior:'smooth'}); },50);
+      } else ir(s.id);
+    });
+    nav.appendChild(b);
+  });
+}
+document.getElementById('menuBtn').addEventListener('click',function(){
+  const nav=document.getElementById('menu');
+  const ab=nav.classList.toggle('abierto');
+  this.setAttribute('aria-expanded',ab?'true':'false');
+});
+document.getElementById('marcaBtn').addEventListener('click',()=>{ areaSel=null;cargoSel=null;ir('inicio'); });
+
+function ir(v){ vista=v; pintar(); window.scrollTo(0,0); }
+
+/* ===================================================================
+   PINTADO
+   =================================================================== */
+const app=document.getElementById('app');
+function esc(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function volver(texto,fn){
+  const b=document.createElement('button'); b.className='volver'; b.textContent='‹ '+texto;
+  b.addEventListener('click',fn); return b;
+}
+// Crea la estructura sección > contenido > ficha y devuelve el nodo donde escribir.
+function lienzo(estrecho){
+  const sec=document.createElement('section'); sec.className='seccion';
+  const cont=document.createElement('div'); cont.className='contenido';
+  sec.appendChild(cont); app.appendChild(sec);
+  if(!estrecho) return cont;
+  const f=document.createElement('div'); f.className='ficha'; cont.appendChild(f); return f;
+}
+
+function pintar(){
+  pintarMenu();
+  app.innerHTML='';
+  if(!datos){
+    const d=document.createElement('div'); d.className='centro';
+    d.innerHTML='<div class="girador"></div><p>Buscando los caminos disponibles…</p>';
+    app.appendChild(d); return;
+  }
+  if(vista==='inicio') vistaInicio();
+  else if(vista==='ruta') vistaRuta();
+  else if(vista==='cargo') vistaCargo();
+  else if(vista==='evaluar') vistaEvaluar();
+  else if(vista==='resultado') vistaResultado();
+  else if(vista==='postular') vistaPostular();
+  else if(vista==='listo') vistaListo();
+  else if(vista==='mispost') vistaMisPostulaciones();
+  else if(vista==='faq') vistaFaq();
+}
+
+/* ---------- Portada ---------- */
+function vistaInicio(){
+  const port=document.createElement('div');
+  port.className='portada';
+  port.innerHTML=
+    '<div class="portada-rejilla">'+
+      '<div class="portada-txt">'+
+        '<h1>Tu talento<span>tiene muchos caminos</span></h1>'+
+        '<p class="portada-lead">Mira los cargos que existen hoy, entérate de qué se necesita para llegar a ellos y postúlate cuando estés listo.</p>'+
+        '<div class="portada-regla"></div>'+
+        '<div class="ventajas">'+
+          '<div class="ventaja"><span class="ventaja-ico">'+ico('barras','#C8A24A',22)+'</span><span>Conoce las oportunidades</span></div>'+
+          '<div class="ventaja"><span class="ventaja-ico">'+ico('libro','#C8A24A',22)+'</span><span>Fortalece tus habilidades</span></div>'+
+          '<div class="ventaja"><span class="ventaja-ico">'+ico('trofeo','#C8A24A',22)+'</span><span>Construye tu futuro</span></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="portada-media" '+(IMAGENES.hero?'style="background-image:url(\''+IMAGENES.hero+'\')"':'')+'>'+
+        (IMAGENES.hero?'':ico('brujula','rgba(200,162,74,.26)',150))+
+        '<div class="tarjeta-lema"><b>Diferentes áreas.<br>Un mismo propósito.</b><hr>'+
+        '<p>Tu crecimiento también hace parte de nuestra historia.</p></div>'+
+      '</div>'+
+    '</div>';
+  app.appendChild(port);
+
+  const sec=document.createElement('section'); sec.className='seccion'; sec.id='areas';
+  const cont=document.createElement('div'); cont.className='contenido';
+  sec.appendChild(cont); app.appendChild(sec);
+
+  const total=datos.areas.reduce((n,a)=>n+a.cargos.length,0);
+  if(!total){
+    cont.innerHTML='<div class="vacio-msg">Todavía no hay cargos publicados en el portal.<br>Vuelve a escanear el código en unos días.</div>';
+    franjaFinal(); return;
+  }
+
+  const cab=document.createElement('div');
+  cab.className='seccion-cab';
+  cab.innerHTML='<div><h2>¿Por dónde quieres empezar?</h2><p>Elige el área que te interesa conocer.</p></div>'+
+    '<div class="buscador">'+ico('lupa','#666666',20)+
+    '<input id="buscar" type="search" placeholder="Busca un área o cargo…" value="'+esc(busqueda)+'"></div>';
+  cont.appendChild(cab);
+
+  const zona=document.createElement('div');
+  cont.appendChild(zona);
+  pintarAreas(zona);
+
+  const inp=cab.querySelector('#buscar');
+  inp.addEventListener('input',()=>{ busqueda=inp.value; pintarAreas(zona); });
+
+  franjaFinal();
+}
+
+function pintarAreas(zona){
+  zona.innerHTML='';
+  const q=busqueda.trim().toLowerCase();
+
+  if(q){
+    // Con búsqueda mostramos cargos de todas las áreas, no solo nombres de área.
+    const hits=[];
+    datos.areas.forEach(a=>a.cargos.forEach(c=>{
+      const texto=(c.nombre+' '+(c.descripcion||'')+' '+a.nombre).toLowerCase();
+      if(texto.indexOf(q)>=0) hits.push({a:a,c:c});
+    }));
+    if(!hits.length){
+      zona.innerHTML='<div class="vacio-msg">No encontramos nada con “'+esc(busqueda)+'”.<br>Prueba con otra palabra, o borra la búsqueda para ver todas las áreas.</div>';
+      return;
+    }
+    const ol=document.createElement('ol'); ol.className='ruta';
+    hits.forEach(h=>ol.appendChild(peldano(h.c,h.a,true)));
+    zona.appendChild(ol);
+    return;
+  }
+
+  const rej=document.createElement('div'); rej.className='rejilla-areas';
+  datos.areas.forEach(area=>{
+    const foto=IMAGENES.areas[area.nombre];
+    const n=area.cargos.length;
+    const b=document.createElement('button');
+    b.className='area';
+    b.innerHTML=
+      '<div class="area-foto '+(foto?'':'sin-foto')+'" '+(foto?'style="background-image:url(\''+foto+'\')"':'')+'>'+
+        (foto?'':ico(icoDeArea(area.nombre),'rgba(31,31,31,.22)',56))+
+        '<span class="area-ico">'+ico(icoDeArea(area.nombre),'#1F1F1F',20)+'</span>'+
+      '</div>'+
+      '<div class="area-pie"><div>'+
+        '<div class="area-nom">'+esc(area.nombre)+'</div>'+
+        '<div class="area-cuenta">'+n+' '+(n===1?'cargo para conocer':'cargos para conocer')+'</div>'+
+      '</div>'+ico('flecha','#666666',20)+'</div>';
+    b.addEventListener('click',()=>{ areaSel=area; ir('ruta'); });
+    rej.appendChild(b);
+  });
+  zona.appendChild(rej);
+}
+
+function franjaFinal(){
+  const f=document.createElement('div');
+  f.className='franja';
+  f.innerHTML='<div class="franja-fila">'+
+    '<div class="franja-item">'+ico('brujula','#C8A24A',30)+'<div><b>Explora</b><span>nuevas oportunidades</span></div></div>'+
+    '<div class="franja-item">'+ico('barras','#C8A24A',30)+'<div><b>Prepárate</b><span>con las herramientas necesarias</span></div></div>'+
+    '<div class="franja-item">'+ico('personas','#C8A24A',30)+'<div><b>Postúlate</b><span>cuando estés listo</span></div></div>'+
+    '<div class="franja-item">'+ico('estrella','#C8A24A',30)+'<div><b>Crece</b><span>con nosotros</span></div></div>'+
+    '<div class="franja-lema">'+esc(CONFIG.lema)+'<u></u></div></div>';
+  app.appendChild(f);
+}
+
+/* ---------- El camino ---------- */
+function peldano(c,area,conArea){
+  const li=document.createElement('li'); li.className='peldano';
+  const teaser=(c.descripcion||'').trim();
+  const corto=teaser?(teaser.length>135?teaser.slice(0,132).trim()+'…':teaser):'Entra para ver qué se necesita para este cargo.';
+  li.innerHTML='<div class="marca-nivel">'+(c.nivel!=null?c.nivel:'·')+'</div>';
+  const b=document.createElement('button');
+  b.className='peldano-btn';
+  b.innerHTML='<div class="peldano-nom">'+esc(c.nombre)+'</div>'+
+    (conArea?'<div class="peldano-area">'+esc(area.nombre)+'</div>':'')+
+    '<div class="peldano-txt">'+esc(corto)+'</div>'+
+    '<div class="peldano-ver">Ver qué necesitas</div>';
+  b.addEventListener('click',()=>{ areaSel=area; cargoSel=c; marcados=new Set(); resultado=null; ir('cargo'); });
+  li.appendChild(b);
+  return li;
+}
+
+function vistaRuta(){
+  if(!areaSel) return ir('inicio');
+  const cont=lienzo(false);
+  cont.appendChild(volver('Volver a las áreas',()=>{ areaSel=null; ir('inicio'); }));
+  const cab=document.createElement('div');
+  cab.className='seccion-cab';
+  cab.innerHTML='<div><h2>'+esc(areaSel.nombre)+'</h2>'+
+    '<p>Este es el camino dentro del área. Cada paso pide un poco más, y cada uno se puede alcanzar.</p></div>';
+  cont.appendChild(cab);
+  const ol=document.createElement('ol'); ol.className='ruta';
+  areaSel.cargos.forEach(c=>ol.appendChild(peldano(c,areaSel,false)));
+  cont.appendChild(ol);
+}
+
+/* ---------- Ficha del cargo ---------- */
+function vistaCargo(){
+  if(!cargoSel) return ir('inicio');
+  const c=cargoSel;
+  const f=lienzo(true);
+  f.appendChild(volver('Volver a '+areaSel.nombre,()=>{ cargoSel=null; ir('ruta'); }));
+
+  const enc=document.createElement('div');
+  enc.innerHTML='<span class="chip">Nivel '+(c.nivel!=null?c.nivel:'—')+' · '+esc(areaSel.nombre)+'</span>'+
+    '<h1 class="cargo-tit">'+esc(c.nombre)+'</h1>';
+  f.appendChild(enc);
+
+  const desc=(c.descripcion||'').trim();
+  const d=document.createElement('div');
+  d.className='consiste'+(desc?'':' vacio');
+  d.textContent=desc||'Todavía no hay una descripción de este cargo. Abajo puedes ver los requisitos.';
+  f.appendChild(d);
+
+  const reqs=requisitosDe(c);
+  if(!reqs.length){
+    const v=document.createElement('div'); v.className='vacio-msg';
+    v.textContent='Aún no se cargaron los requisitos de este cargo.';
+    f.appendChild(v);
+  } else {
+    GRUPOS.forEach(g=>{
+      const items=reqs.filter(r=>r.grupo===g.key);
+      if(!items.length) return;
+      const s=document.createElement('div'); s.className='grupo';
+      s.innerHTML='<h3>'+g.titulo+'</h3><p class="grupo-nota">'+g.nota+'</p>';
+      const ul=document.createElement('ul'); ul.className='lista';
+      items.forEach(r=>{ const li=document.createElement('li'); li.textContent=r.texto; ul.appendChild(li); });
+      s.appendChild(ul); f.appendChild(s);
+    });
+  }
+
+  const barra=document.createElement('div'); barra.className='barra-accion';
+  const b=document.createElement('button'); b.className='btn btn-oro';
+  b.textContent='Mírate en este cargo';
+  b.addEventListener('click',()=> reqs.length?ir('evaluar'):ir('postular'));
+  barra.appendChild(b); f.appendChild(barra);
+}
+
+/* ---------- Autoevaluación ---------- */
+function vistaEvaluar(){
+  if(!cargoSel) return ir('inicio');
+  const reqs=requisitosDe(cargoSel);
+  const f=lienzo(true);
+  f.appendChild(volver('Volver al cargo',()=>ir('cargo')));
+
+  const cab=document.createElement('div');
+  cab.innerHTML='<h2 class="titulo-pag">Mírate frente a '+esc(cargoSel.nombre)+'</h2>'+
+    '<p class="lead-pag">Marca lo que ya tienes hoy. Responde con sinceridad: esto es para ti, y nos ayuda a saber cómo acompañarte.</p>';
+  f.appendChild(cab);
+
+  let actual='';
+  reqs.forEach(r=>{
+    if(r.titulo!==actual){
+      actual=r.titulo;
+      const h=document.createElement('div'); h.className='grupo-eval'; h.textContent=r.titulo;
+      f.appendChild(h);
+    }
+    const lab=document.createElement('label'); lab.className='opcion';
+    const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=marcados.has(r.id);
+    chk.addEventListener('change',()=>{
+      if(chk.checked) marcados.add(r.id); else marcados.delete(r.id);
+      const el=document.getElementById('contador');
+      if(el) el.textContent='Marcaste '+marcados.size+' de '+reqs.length;
+    });
+    const sp=document.createElement('span'); sp.textContent=r.texto;
+    lab.appendChild(chk); lab.appendChild(sp); f.appendChild(lab);
+  });
+
+  const barra=document.createElement('div'); barra.className='barra-accion';
+  barra.innerHTML='<div class="contador" id="contador">Marcaste '+marcados.size+' de '+reqs.length+'</div>';
+  const b=document.createElement('button'); b.className='btn btn-oro';
+  b.textContent='Ver mi resultado';
+  b.addEventListener('click',()=>{ resultado=calcular(cargoSel); ir('resultado'); });
+  barra.appendChild(b); f.appendChild(barra);
+}
+
+/* ---------- Resultado ---------- */
+function vistaResultado(){
+  if(!resultado) return ir('evaluar');
+  const r=resultado;
+  const nivel=r.pct>=100?'alto':(r.pct>=60?'medio':'bajo');
+  const titulo=nivel==='alto'?'Cumples todo lo que pide este cargo'
+    :nivel==='medio'?'Estás cerca de este cargo':'Este cargo está más adelante en tu camino';
+  const texto=nivel==='alto'?'Según lo que marcaste, tienes todo lo que el cargo necesita. Si te interesa, postúlate y Gestión Humana revisará tu caso.'
+    :nivel==='medio'?'Ya tienes buena parte de lo que se pide. Puedes postularte de todas formas: contarnos de tu interés nos permite acompañarte en lo que te falta.'
+    :'Todavía te faltan varias cosas, y eso no es un no. Mira abajo cómo prepararte, y postúlate si quieres que sepamos que este camino te interesa.';
+
+  const f=lienzo(true);
+  f.appendChild(volver('Volver a la autoevaluación',()=>ir('evaluar')));
+
+  const v=document.createElement('div'); v.className='veredicto '+nivel;
+  v.innerHTML='<h2>'+titulo+'</h2><p>'+texto+'</p>'+
+    '<div class="barra-ajuste"><i style="width:'+r.pct+'%"></i></div>'+
+    '<div class="ajuste-txt">Cumples '+r.clavesOk.length+' de '+r.claves.length+' requisitos claves de '+esc(cargoSel.nombre)+'</div>';
+  f.appendChild(v);
+
+  if(r.tiene.length){
+    const b=document.createElement('div'); b.className='bloque';
+    b.innerHTML='<h3>Lo que ya tienes</h3>';
+    const ul=document.createElement('ul'); ul.className='marcada si';
+    r.tiene.forEach(x=>{ const li=document.createElement('li'); li.textContent=x.texto; ul.appendChild(li); });
+    b.appendChild(ul); f.appendChild(b);
+  }
+  if(r.faltan.length){
+    const b=document.createElement('div'); b.className='bloque';
+    b.innerHTML='<h3>Lo que te falta para llegar</h3>';
+    const ul=document.createElement('ul'); ul.className='marcada no';
+    r.faltan.forEach(x=>{ const li=document.createElement('li'); li.textContent=x.texto; ul.appendChild(li); });
+    b.appendChild(ul); f.appendChild(b);
+
+    const rutas=lineas(cargoSel.rutaAprendizaje).concat(lineas(cargoSel.planEstudios));
+    if(rutas.length){
+      const p=document.createElement('div'); p.className='prepararse';
+      p.innerHTML='<h3>Cómo puedes prepararte</h3><p>Estas son las formaciones que la organización tiene pensadas para este cargo.</p>';
+      const ul2=document.createElement('ul'); ul2.className='lista';
+      rutas.forEach(x=>{ const li=document.createElement('li'); li.textContent=x; ul2.appendChild(li); });
+      p.appendChild(ul2); f.appendChild(p);
+    }
+  }
+
+  const barra=document.createElement('div'); barra.className='barra-accion';
+  const acc=document.createElement('div'); acc.className='acciones';
+  const b1=document.createElement('button'); b1.className='btn btn-oro';
+  b1.textContent='Postularme a este cargo';
+  b1.addEventListener('click',()=>{ errorEnvio=''; ir('postular'); });
+  const b2=document.createElement('button'); b2.className='btn btn-linea';
+  b2.textContent='Ver otro cargo';
+  b2.addEventListener('click',()=>{ cargoSel=null; ir('ruta'); });
+  acc.appendChild(b1); acc.appendChild(b2); barra.appendChild(acc); f.appendChild(barra);
+}
+
+/* ---------- Postulación ---------- */
+const CAMPOS=[
+  { id:'nombre', et:'Tu nombre completo', req:true, ancho:true },
+  { id:'documento', et:'Número de documento', req:true, tipo:'tel' },
+  { id:'celular', et:'Celular', req:true, tipo:'tel', ayuda:'Por aquí te vamos a contactar.' },
+  { id:'correo', et:'Correo electrónico', req:false, tipo:'email', ayuda:'Si no tienes, déjalo vacío.' },
+  { id:'cargoActual', et:'El cargo que ocupas hoy', req:true },
+  { id:'sede', et:'Sede, planta o granja donde trabajas', req:true, ancho:true }
+];
+
+function vistaPostular(){
+  if(!cargoSel) return ir('inicio');
+  const f=lienzo(true);
+  f.appendChild(volver('Volver',()=>ir(resultado?'resultado':'cargo')));
+
+  const cab=document.createElement('div');
+  cab.innerHTML='<h2 class="titulo-pag">Postúlate a '+esc(cargoSel.nombre)+'</h2>'+
+    '<p class="lead-pag">Con estos datos Gestión Humana puede ubicarte y contarte cómo sigue el proceso.</p>';
+  f.appendChild(cab);
+
+  const res=document.createElement('div'); res.className='resumen-post';
+  res.innerHTML='<strong>'+esc(cargoSel.nombre)+'</strong>'+esc(areaSel.nombre)+' · Nivel '+(cargoSel.nivel!=null?cargoSel.nivel:'—')+
+    (resultado?'<br>Cumples '+resultado.clavesOk.length+' de '+resultado.claves.length+' requisitos claves':'');
+  f.appendChild(res);
+
+  const rej=document.createElement('div'); rej.className='rejilla-campos';
+  CAMPOS.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='campo'+(c.ancho?' ancho':''); d.id='campo-'+c.id;
+    d.innerHTML='<label for="f-'+c.id+'">'+c.et+(c.req?'':' <span class="ayuda">(opcional)</span>')+
+      (c.ayuda?'<br><span class="ayuda">'+c.ayuda+'</span>':'')+'</label>'+
+      '<input id="f-'+c.id+'" type="'+(c.tipo||'text')+'" autocomplete="off">'+
+      '<div class="msg">Completa este dato para poder enviar tu postulación.</div>';
+    rej.appendChild(d);
+  });
+  const m=document.createElement('div'); m.className='campo ancho';
+  m.innerHTML='<label for="f-motivo">¿Por qué te interesa este cargo? <span class="ayuda">(opcional)</span></label>'+
+    '<textarea id="f-motivo" placeholder="Cuéntanos en pocas palabras…"></textarea>';
+  rej.appendChild(m);
+  f.appendChild(rej);
+
+  if(errorEnvio){
+    const e=document.createElement('div'); e.className='aviso malo';
+    e.style.borderRadius='12px'; e.style.marginBottom='10px'; e.textContent=errorEnvio;
+    f.appendChild(e);
+  }
+
+  const barra=document.createElement('div'); barra.className='barra-accion';
+  const b=document.createElement('button'); b.className='btn btn-oro'; b.id='btnEnviar';
+  b.textContent=enviando?'Enviando…':'Enviar mi postulación'; b.disabled=enviando;
+  b.addEventListener('click',enviar);
+  barra.appendChild(b); f.appendChild(barra);
+}
+
+function valorDe(id){ const el=document.getElementById('f-'+id); return el?el.value.trim():''; }
+
+function guardarLocal(reg){
+  try{
+    const prev=JSON.parse(localStorage.getItem(CLAVE_MIS_POST)||'[]');
+    prev.unshift({ codigo:reg.codigo, cargo:reg.cargoNombre, area:reg.areaNombre,
+      pct:reg.ajustePct, fecha:new Date().toISOString() });
+    localStorage.setItem(CLAVE_MIS_POST, JSON.stringify(prev.slice(0,30)));
+  }catch(e){}
+}
+
+async function enviar(){
+  if(enviando) return;
+  let ok=true;
+  CAMPOS.forEach(c=>{
+    const cont=document.getElementById('campo-'+c.id);
+    const malo=c.req && !valorDe(c.id);
+    cont.classList.toggle('error',malo);
+    if(malo && ok) document.getElementById('f-'+c.id).focus();
+    if(malo) ok=false;
+  });
+  if(!ok) return;
+
+  enviando=true; errorEnvio='';
+  const btn=document.getElementById('btnEnviar');
+  btn.disabled=true; btn.textContent='Enviando…';
+
+  const r=resultado||calcular(cargoSel);
+  codigoRef=(CONFIG.nombreOrg||'PC').replace(/[^A-Za-z]/g,'').slice(0,4).toUpperCase()+'-'+
+    Math.random().toString(36).slice(2,6).toUpperCase();
+
+  const registro={
+    codigo:codigoRef, orgCode:ORG_CODE||'demo',
+    areaId:areaSel.id, areaNombre:areaSel.nombre,
+    cargoId:cargoSel.id, cargoNombre:cargoSel.nombre, cargoNivel:(cargoSel.nivel!=null?cargoSel.nivel:null),
+    nombre:valorDe('nombre'), documento:valorDe('documento'), celular:valorDe('celular'),
+    correo:valorDe('correo'), cargoActual:valorDe('cargoActual'), sede:valorDe('sede'),
+    motivacion:valorDe('motivo'), ajustePct:r.pct,
+    requisitosClaveTotal:r.claves.length, requisitosClaveCumplidos:r.clavesOk.length,
+    cumple:r.tiene.map(x=>x.texto), leFalta:r.faltan.map(x=>x.texto), estado:'nueva'
+  };
+
+  if(modoDemo||!db){ guardarLocal(registro); enviando=false; ir('listo'); return; }
+  try{
+    registro.creadoEn=firebase.firestore.FieldValue.serverTimestamp();
+    await db.collection(COL_POSTULACIONES).add(registro);
+    guardarLocal(registro); enviando=false; ir('listo');
+  }catch(e){
+    enviando=false;
+    errorEnvio='No pudimos enviar tu postulación. Revisa que tengas señal e inténtalo otra vez.';
+    pintar();
+  }
+}
+
+/* ---------- Confirmación ---------- */
+function vistaListo(){
+  const cont=lienzo(false);
+  const d=document.createElement('div'); d.className='listo';
+  d.innerHTML='<div class="listo-sello">✓</div>'+
+    '<h2 class="titulo-pag">Recibimos tu postulación</h2>'+
+    '<p class="lead-pag">Guarda este código por si necesitas preguntar por tu proceso.</p>'+
+    '<div class="codigo">'+esc(codigoRef)+'</div>'+
+    '<p class="lead-pag">Gestión Humana revisará tu caso y te contactará al celular que registraste. Mientras tanto, puedes seguir explorando otros caminos.</p>';
+  cont.appendChild(d);
+  const acc=document.createElement('div'); acc.className='acciones'; acc.style.justifyContent='center';
+  const b1=document.createElement('button'); b1.className='btn btn-oro';
+  b1.textContent='Seguir explorando';
+  b1.addEventListener('click',()=>{ areaSel=null;cargoSel=null;marcados=new Set();resultado=null;ir('inicio'); });
+  const b2=document.createElement('button'); b2.className='btn btn-linea';
+  b2.textContent='Ver mis postulaciones';
+  b2.addEventListener('click',()=>ir('mispost'));
+  acc.appendChild(b1); acc.appendChild(b2); d.appendChild(acc);
+}
+
+/* ---------- Mis postulaciones (guardadas en este dispositivo) ---------- */
+function vistaMisPostulaciones(){
+  const f=lienzo(true);
+  let lista=[];
+  try{ lista=JSON.parse(localStorage.getItem(CLAVE_MIS_POST)||'[]'); }catch(e){}
+
+  f.innerHTML='<h2 class="titulo-pag">Mis postulaciones</h2>'+
+    '<p class="lead-pag">Este es el registro de lo que has enviado desde este teléfono o computador. Si te postulaste desde otro equipo, no aparecerá aquí.</p>';
+
+  if(!lista.length){
+    const v=document.createElement('div'); v.className='vacio-msg';
+    v.innerHTML='Todavía no te has postulado a ningún cargo.<br>Explora las áreas y mira cuál camino te llama.';
+    f.appendChild(v);
+    const b=document.createElement('button'); b.className='btn btn-oro';
+    b.style.marginTop='20px'; b.textContent='Explorar las áreas';
+    b.addEventListener('click',()=>{ areaSel=null; ir('inicio'); });
+    f.appendChild(b);
+    return;
+  }
+  lista.forEach(p=>{
+    const d=document.createElement('div'); d.className='post-item';
+    const fe=new Date(p.fecha);
+    const fecha=isNaN(fe.getTime())?'':fe.toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'});
+    d.innerHTML='<div><b>'+esc(p.cargo)+'</b><small>'+esc(p.area)+' · enviada el '+fecha+'</small></div>'+
+      '<span class="post-cod">'+esc(p.codigo)+'</span>';
+    f.appendChild(d);
+  });
+}
+
+/* ---------- Preguntas frecuentes ---------- */
+function vistaFaq(){
+  const f=lienzo(true);
+  f.innerHTML='<h2 class="titulo-pag">Preguntas frecuentes</h2>'+
+    '<p class="lead-pag">Lo que más nos preguntan sobre el plan de carrera.</p>';
+  PREGUNTAS.forEach(q=>{
+    const d=document.createElement('div'); d.className='pregunta';
+    d.innerHTML='<button aria-expanded="false">'+esc(q.p)+'</button><div>'+esc(q.r)+'</div>';
+    d.querySelector('button').addEventListener('click',function(){
+      const ab=d.classList.toggle('abierta');
+      this.setAttribute('aria-expanded',ab?'true':'false');
+    });
+    f.appendChild(d);
+  });
+}
+
+/* ===================================================================
+   ARRANQUE
+   =================================================================== */
+document.getElementById('marcaTit').textContent=CONFIG.titulo;
+document.getElementById('marcaSub').textContent=CONFIG.bajada;
+document.getElementById('marcaNom').textContent=CONFIG.nombreOrg;
+if(IMAGENES.logo){
+  document.getElementById('marcaLogo').innerHTML='<img class="marca-logo" src="'+IMAGENES.logo+'" alt="'+esc(CONFIG.nombreOrg)+'">';
+  document.getElementById('marcaNom').style.display='none';
+}else{
+  document.getElementById('marcaLogo').innerHTML=ico('brujula','#C8A24A',34);
+}
+if(!hayFirebase){
+  avisar('demo','Modo demostración: estás viendo cargos de ejemplo. Para mostrar los cargos reales, pega la configuración de Firebase y el código de organización en la parte de arriba de este archivo.');
+}
+pintar();
+cargar();
+</script>
+</body>
+</html>
