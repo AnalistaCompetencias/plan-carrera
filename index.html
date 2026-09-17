@@ -26,17 +26,16 @@ const CONFIG = {
   "messagingSenderId": "42862317480",
   "appId": "1:42862317480:web:7926aafd9bf37c6224979d",
   "measurementId": "G-DZ5LYFJG9H"
-},
+}"
+  },
   // 2) El mismo código de organización que usas en el artefacto.
   orgCode: "Competencias2026",
   // 3) Marca.
-   nombreOrg: "AVSA",
+  nombreOrg: "AVSA",
   titulo: "Plan Carrera",
   bajada: "",
   lema: ""
 };
-
-
 
 // 4) Imágenes. Deja vacío lo que no tengas: se dibuja un fondo con el ícono del área.
 //    Puedes usar rutas relativas ("img/granjas.jpg") o direcciones completas.
@@ -952,6 +951,28 @@ function vistaPostular(){
   rej.appendChild(m);
   f.appendChild(rej);
 
+  // Casilla de autorización de tratamiento de datos — Ley 1581 de 2012
+  const autBox=document.createElement('div');
+  autBox.style.cssText='border:1px solid var(--gris-medio);border-radius:12px;padding:16px 18px;margin-bottom:6px;background:var(--gris-claro);';
+  autBox.innerHTML=
+    '<label style="display:flex;gap:13px;align-items:flex-start;cursor:pointer;">'+
+      '<input type="checkbox" id="f-autorizo" style="appearance:none;-webkit-appearance:none;flex:none;'+
+        'width:22px;height:22px;border:2px solid var(--gris-medio);border-radius:6px;cursor:pointer;'+
+        'background:var(--blanco);position:relative;margin-top:2px;" onclick="this.style.background=this.checked?\'#3F7A57\':\'\'">'+
+      '<span style="font-size:15px;line-height:1.5;">'+
+        'Autorizo a <strong>AVSA S.A.</strong> para recolectar y tratar mis datos personales con el fin de gestionar mi postulación al plan de carrera, '+
+        'de acuerdo con la <strong>Política de Tratamiento de Datos Personales</strong> de la organización. '+
+        'Entiendo que mis datos serán usados únicamente para este proceso y que puedo solicitar su eliminación en cualquier momento al área de Gestión Humana.'+
+      '</span>'+
+    '</label>';
+  f.appendChild(autBox);
+
+  const autError=document.createElement('div');
+  autError.id='autError';
+  autError.style.cssText='display:none;color:var(--terracota);font-size:13.5px;margin-bottom:10px;padding:0 4px;';
+  autError.textContent='Debes aceptar la autorización de tratamiento de datos para continuar.';
+  f.appendChild(autError);
+
   if(errorEnvio){
     const e=document.createElement('div'); e.className='aviso malo';
     e.style.borderRadius='12px'; e.style.marginBottom='10px'; e.textContent=errorEnvio;
@@ -987,6 +1008,16 @@ async function enviar(){
     if(malo) ok=false;
   });
   if(!ok) return;
+
+  // Validar autorización de datos
+  const autChk=document.getElementById('f-autorizo');
+  const autErr=document.getElementById('autError');
+  if(autChk && !autChk.checked){
+    if(autErr) autErr.style.display='block';
+    autChk.scrollIntoView({block:'center',behavior:'smooth'});
+    return;
+  }
+  if(autErr) autErr.style.display='none';
 
   enviando=true; errorEnvio='';
   const btn=document.getElementById('btnEnviar');
